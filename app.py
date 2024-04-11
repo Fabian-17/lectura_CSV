@@ -8,12 +8,6 @@ except mysql.Error as e:
     exit(1)
 
 
-# with open('localidades.csv', newline='') as archivo_csv:
-#     lector_csv = csv.reader(archivo_csv, delimiter=',', quotechar='"')
-#     for fila in lector_csv:
-#         print(fila)
-
-
 try:
     cursor = db.cursor()
 
@@ -29,11 +23,11 @@ try:
     # Crear la tabla 'localidades'
     cursor.execute("""
         CREATE TABLE localidades (
-            id INT,
-            provincia VARCHAR(255) NOT NULL,
-            localidad VARCHAR(255) NOT NULL,
-            cp INT(10) NOT NULL,
-            id_prov_mstr INT
+                provincia VARCHAR(255), 
+                `id` INT(11),
+                localidad VARCHAR(255),
+                cp INT(11), 
+                id_prov_mstr INT(11)
         )
     """)
     print("Tabla 'localidades' creada.")
@@ -43,27 +37,30 @@ try:
         lector_csv = csv.reader(archivo_csv, delimiter=',', quotechar='"')
         next(lector_csv)  # Saltar la primera fila si contiene encabezados
         for fila in lector_csv:
-            print(fila)
-            id, provincia, localidad, cp, id_prov_mstr = fila
-            cursor.execute("INSERT INTO localidades (id, provincia, localidad, cp, id_prov_mstr) VALUES (%s, %s, %s, %s, %s)", (id, provincia, localidad, cp, id_prov_mstr))
+            provincia, id, localidad, cp, id_prov_mstr = fila
+            cursor.execute("INSERT INTO localidades (provincia, id, localidad, cp, id_prov_mstr) VALUES (%s, %s, %s, %s, %s)", (provincia, id, localidad, cp, id_prov_mstr))
     print("Datos insertados correctamente.")
 
+# Confirmar la transacción
+    db.commit()
+
 except mysql.Error as e:
+    db.rollback()
     print(f"Error al crear o eliminar la tabla 'localidades' en MySQL: {e}")
     exit(1)
 
 
-# try:
-#     cursor = db.cursor()
-#     cursor.execute("SELECT  DISTINCT provincia FROM localidades;")
-#     provincias =cursor.fetchall()
-#     for provincia in provincias:
-#         cursor.execute("SELECT * FROM localidades WHERE provincia = %s", (provincia[0], ))
-#         localidades = cursor.fetchall()
-#         with open(f"csv/{provincia[0]}.csv", "w", newline='', encoding='utf-8') as file:
-#             writer = csv.writer(file)
-#             writer.writerow(localidades)
-# except mysql.Error as e:
-#     db.rollback()
-#     print(f"Error al obtener los datos de MySQL: {e}")
-#     exit(1)
+try:
+    cursor = db.cursor()
+    cursor.execute("SELECT  DISTINCT provincia FROM localidades;")
+    provincias =cursor.fetchall()
+    for provincia in provincias:
+        cursor.execute("SELECT * FROM localidades WHERE provincia = %s", (provincia[0], ))
+        localidades = cursor.fetchall()
+        with open(f"csv/{provincia[0]}.csv", "w", newline='', encoding='utf-8') as file:
+            writer = csv.writer(file)
+            writer.writerow(localidades)
+except mysql.Error as e:
+    db.rollback()
+    print(f"Error al obtener los datos de MySQL: {e}")
+    exit(1)
