@@ -2,7 +2,7 @@ import csv
 import MySQLdb as mysql
 
 try:
-    db = mysql.connect('localhost', 'root', '', 'tp')
+    db = mysql.connect('localhost', 'root', '', 'localidades')
 except mysql.Error as e:
     print(f"Error al conectar a MySQL: {e}")
     exit(1)
@@ -57,7 +57,7 @@ try:
     for provincia in provincias:
         cursor.execute("SELECT * FROM localidades WHERE provincia = %s", (provincia[0], ))
         localidades = cursor.fetchall()
-        with open(f"csv/{provincia[0]}.csv", "w", newline='', encoding='utf-8') as file:
+        with open(f"agrupacion/{provincia[0]}.csv", "w", newline='') as file:
             writer = csv.writer(file)
             writer.writerow(localidades)
 except mysql.Error as e:
