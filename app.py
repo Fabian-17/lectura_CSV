@@ -1,6 +1,7 @@
 import csv 
 import MySQLdb as mysql
 
+# conexión a la base de datos
 try:
     db = mysql.connect('localhost', 'root', '', 'localidades')
 except mysql.Error as e:
@@ -9,6 +10,7 @@ except mysql.Error as e:
 
 
 try:
+    # Crear un cursor para ejecutar consultas
     cursor = db.cursor()
 
     # Verificar si la tabla 'localidades' ya existe
@@ -44,6 +46,7 @@ try:
 # Confirmar la transacción
     db.commit()
 
+# Manejo de errores
 except mysql.Error as e:
     db.rollback()
     print(f"Error al crear o eliminar la tabla 'localidades' en MySQL: {e}")
@@ -52,14 +55,19 @@ except mysql.Error as e:
 
 try:
     cursor = db.cursor()
+    # Obtener las provincias
     cursor.execute("SELECT  DISTINCT provincia FROM localidades;")
     provincias =cursor.fetchall()
+    # Crear un archivo CSV por cada provincia
     for provincia in provincias:
         cursor.execute("SELECT * FROM localidades WHERE provincia = %s", (provincia[0], ))
         localidades = cursor.fetchall()
         with open(f"agrupacion/{provincia[0]}.csv", "w", newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(localidades)
+            writer.writerow(localidades) # Escribir las filas de las localidades
+            writer.writerow([])  # Agregar una fila vacía como separador
+            writer.writerow(["Cantidad de Localidades en CSV:", len(localidades), ])  # Agregar la cantidad de localidades
+# Manejo de errores
 except mysql.Error as e:
     db.rollback()
     print(f"Error al obtener los datos de MySQL: {e}")
