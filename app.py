@@ -38,23 +38,41 @@ try:
     with open('localidades.csv', newline='') as archivo_csv:
         lector_csv = csv.reader(archivo_csv, delimiter=',', quotechar='"')
         next(lector_csv)  # Saltar la primera fila si contiene encabezados
-        for fila in lector_csv:
-            provincia, id, localidad, cp, id_prov_mstr = fila
-            cursor.execute("INSERT INTO localidades (provincia, id, localidad, cp, id_prov_mstr) VALUES (%s, %s, %s, %s, %s)", (provincia, id, localidad, cp, id_prov_mstr))
-    print("Datos insertados correctamente.")
+        data = list(lector_csv) # Convertir el lector en una lista
+        # Insertar los datos en la tabla 'localidades'
+        cursor.executemany("""
+        INSERT INTO localidades (provincia, id, localidad, cp, id_prov_mstr) 
+        VALUES (%s, %s, %s, %s, %s)
+        """, data)
+        print("Datos insertados correctamente.")
 
 # Confirmar la transacción
     db.commit()
 
 # Manejo de errores
 except mysql.Error as e:
-    db.rollback()
+    db.rollback() # Revertir la transacción si hay errores  
     print(f"Error al crear o eliminar la tabla 'localidades' en MySQL: {e}")
     exit(1)
 
 
 try:
-    cursor = db.cursor()
+        # Función para crear el archivo de conteo
+    def crear_archivo_conteo(conexion, cursor):
+        cursor.execute("SELECT provincia, COUNT(*) AS total_localidades FROM localidades GROUP BY provincia;")
+        conteo_por_provincia = cursor.fetchall()
+
+        with open('conteo.csv', 'w', newline='') as csvfile:
+            fieldnames = ['Provincia', 'Total_Localidades']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
+            for provincia, total_localidades in conteo_por_provincia:
+                writer.writerow({'Provincia': provincia, 'Total_Localidades': total_localidades})
+        print("Archivo 'conteo.csv' creado exitosamente.")
+
+    # Llamar a la función para crear el archivo de conteo
+    crear_archivo_conteo(db, cursor)
+    cursor = db.cursor() # Crear un cursor para ejecutar consultas
     # Obtener las provincias
     cursor.execute("SELECT  DISTINCT provincia FROM localidades;")
     provincias =cursor.fetchall()
@@ -65,8 +83,6 @@ try:
         with open(f"agrupacion/{provincia[0]}.csv", "w", newline='') as file:
             writer = csv.writer(file)
             writer.writerow(localidades) # Escribir las filas de las localidades
-            writer.writerow([])  # Agregar una fila vacía como separador
-            writer.writerow(["Cantidad de Localidades en CSV:", len(localidades), ])  # Agregar la cantidad de localidades
 # Manejo de errores
 except mysql.Error as e:
     db.rollback()
